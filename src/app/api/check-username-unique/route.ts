@@ -1,73 +1,69 @@
-import dbConnect from "@/lib/dbConnect";
-import UserModel from "@/model/User";
-import { z } from "zod";
+import dbConnect from '@/lib/dbConnect';
+import UserModel from '@/model/User';
+import { z } from 'zod';
+import { usernameValidation } from '@/schemas/signUpSchema';
 
-import { userNameValidation } from "@/schemas/signUpSchema";
-
-const UserNameQuerySchema = z.object({
-  userName: userNameValidation,
+const UsernameQuerySchema = z.object({
+  username: usernameValidation,
 });
 
 export async function GET(request: Request) {
-
   await dbConnect();
 
   try {
     const { searchParams } = new URL(request.url);
-    const queryParam = { userName: searchParams.get("username") };
-    const result = UserNameQuerySchema.safeParse(queryParam);
+    const queryParams = {
+      username: searchParams.get('username'),
+    };
+
+    const result = UsernameQuerySchema.safeParse(queryParams);
 
     if (!result.success) {
-      const userNameErrors = result.error.format().userName?._errors || [];
+      const usernameErrors = result.error.format().username?._errors || [];
       return Response.json(
         {
           success: false,
           message:
-            userNameErrors.length > 0
-              ? userNameErrors.join(", ")
-              : "Invalid query params",
+            usernameErrors?.length > 0
+              ? usernameErrors.join(', ')
+              : 'Invalid query parameters',
         },
-        {
-          status: 400,
-        }
+        { status: 400 }
       );
     }
 
-    const { userName } = result.data;
+    const { username } = result.data;
+
     const existingVerifiedUser = await UserModel.findOne({
-      userName,
+      username,
       isVerified: true,
     });
+
     if (existingVerifiedUser) {
       return Response.json(
         {
           success: false,
-          message: "Username is already taken",
+          message: 'Username is already taken',
         },
-        {
-          status: 400,
-        }
+        { status: 200 }
       );
     }
+
     return Response.json(
       {
         success: true,
-        message: "Username is unique",
+        message: 'Username is unique',
       },
-      {
-        status: 200,
-      }
+      { status: 200 }
     );
-  } catch (err) {
-    console.log("Error checking username", err);
+  } catch (error) {
+    console.error('Error checking username:', error);
     return Response.json(
       {
         success: false,
-        message: "Error checking username",
+        message: 'Error checking username',
       },
-      {
-        status: 500,
-      }
+      { status: 500 }
     );
   }
 }
