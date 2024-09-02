@@ -27,8 +27,8 @@ export async function GET(request: Request) {
 
     if (!messages || messages.length === 0) {
       return Response.json(
-        { message: 'No New Messages', success: false },
-        { status: 404 }
+        { message: 'No New Messages', success: true },
+        { status: 200 }
       );
     }
 
